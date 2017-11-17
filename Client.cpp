@@ -41,10 +41,10 @@ Client::Client(unsigned p, unsigned g, unsigned logQ,const string &data, const s
     print(*this->fhesiSecKeyT);
     print(*this->keySwitchSIT);
     this->sendEncryptionParamU(this->addressU,this->portU);
-    this->sendEncryptionParamT(this->addressT,this->portT);
-    LoadDataPolyX(this->loadeddata,this->labels,this->dim,data,*this->client_context);
-    print(this->loadeddata[0]);
-    this->sendEncryptedData(this->addressU,this->portU);
+    //this->sendEncryptionParamT(this->addressT,this->portT);
+    //LoadDataPolyX(this->loadeddata,this->labels,this->dim,data,*this->client_context);
+    //print(this->loadeddata[0]);
+    //this->sendEncryptedData(this->addressU,this->portU);
 }
 
 
@@ -80,20 +80,19 @@ int Client::conn( const string &address, int port)
     return 0;
 }
 
-/**
-    Send data to the connected host
-*/
+
 bool Client::sendData(string data)
 {
-    //Send some data
     if( send(sock , data.c_str() , strlen( data.c_str() ) , 0) < 0)
     {
         perror("Send failed : ");
         return false;
+    } else{
+        print(strlen(data.c_str()));
+        cout<<"Sending: "<<data<<endl;
+        return true;
     }
-    cout<<"Data send\n";
 
-    return true;
 }
 
 /**
@@ -120,9 +119,11 @@ bool Client::sendEncryptionParamU(string address, int port){
     this->conn(address,port);
     this->sendData("C-PK");
     if(this->receive(512)=="U-PK-READY"){
+        print("U-PK-READY");
         ifstream pkstream=this->pkCToStream();
         this->sendStream(pkstream);
         if(this->receive(512)==("U-PK-RECEIVED")){
+            print("U-PK-RECEIVED");
             this->sendData("C-SM");
             if(this->receive(512)=="U-SM-READY"){
                 ifstream ksC = this->ksCToStream();
@@ -183,7 +184,7 @@ bool Client::sendEncryptionParamT(string address, int port){
 ifstream Client::pkCToStream(){
     ofstream filedat("pk.dat");
     Export(filedat,this->fhesiPubKey->GetRepresentation());
-    return ifstream("pk.dat");
+    return ifstream("pk.dat",ios::binary);
 }
 
 bool Client::sendEncryptedData(string address, int port) {
@@ -232,20 +233,29 @@ ifstream Client::encryptedDataToStream(const Ciphertext &ciphertext) {
 
 bool Client::sendStream(ifstream &data) {
     //Send some data
-    ifstream::pos_type size = data.tellg();
+    streampos begin,end;
+    begin =data.tellg();
+    data.seekg(0,ios::end);
+    end=data.tellg();
+    streampos size = end-begin;
+    streampos *sizeref = &size;
     print(size);
     char * memblock = new char [size];
     data.seekg (0, std::ios::beg);
     data.read (memblock, size);
     data.close();
+
+    if(send(sock, sizeref, sizeof(size), 0) < 0){
+        perror("Send failed : ");
+        return false;
+    }
     if( send(sock , memblock , size , 0) < 0)
     {
         perror("Send failed : ");
         return false;
+    } else{
+        return true;
     }
-    cout<<"Data send\n";
-
-    return true;
 
 
 }
