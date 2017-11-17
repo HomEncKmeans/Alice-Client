@@ -27,13 +27,13 @@ KClient::KClient(unsigned p, unsigned g, unsigned logQ,const string &data, const
     this->keySwitchSI = &keySwitchSI1;
     this->fhesiSecKeyT = &fhesiSecKeyT;
     this->keySwitchSIT = &keySwitchSIT;
-    print(*this->fhesiPubKey);
-    print(*this->fhesiSecKey);
-    print(*this->keySwitchSI);
-    print(*this->fhesiSecKeyT);
-    print(*this->keySwitchSIT);
+    //print(*this->fhesiPubKey);
+    //print(*this->fhesiSecKey);
+    //print(*this->keySwitchSI);
+    //print(*this->fhesiSecKeyT);
+    //print(*this->keySwitchSIT);
     this->connectToTServer();
-    this->connectToUServer();
+    //this->connectToUServer();
     this->sendEncryptionParamToTServer();
     //this->sendEncryptionParamU(this->addressU,this->portU);
     //this->sendEncryptionParamT(this->addressT,this->portT);
@@ -99,7 +99,7 @@ void KClient::connectToUServer() {
 }
 
 bool KClient::sendMessage(string message, int socket) {
-    if( send(socket , message.c_str() , strlen( message.c_str() ) , 0) < 0){
+    if( send(socket , message.c_str() , strlen(message.c_str()) , 0) < 0){
         perror("SEND FAILED.");
         return false;
     }else{
@@ -114,22 +114,29 @@ bool KClient::sendStream(ifstream data, int socket) {
     data.seekg(0,ios::end);
     end=data.tellg();
     streampos size = end-begin;
-    streampos *sizeref = &size;
-    print(size);
-    auto * memblock = new char [size];
+    uint32_t sizek= size;
+    auto * memblock = new char [sizek];
     data.seekg (0, std::ios::beg);
-    data.read (memblock, size);
+    data.read (memblock, sizek);
     data.close();
-
-    if(0 > send(socket, sizeref, sizeof(size), 0)){
+    htonl(sizek);
+    if(0 > send(socket, &sizek, sizeof(uint32_t), 0)){
         perror("SEND FAILED.");
         return false;
     }else {
-        if (send(socket, memblock, static_cast<size_t>(size), 0) < 0) {
-            perror("SEND FAILED.");
+        this->log(socket,"<--- "+to_string(sizek));
+        if(this->receiveMessage(socket,7)=="SIZE-OK") {
+            ssize_t r = (send(socket, memblock, static_cast<size_t>(size), 0));
+            print(r); //for debugging
+            if ( r< 0) {
+                perror("SEND FAILED.");
+                return false;
+            } else {
+                return true;
+            }
+        }else{
+            perror("SEND SIZE ERROR");
             return false;
-        } else {
-            return true;
         }
     }
 
@@ -188,37 +195,37 @@ ifstream KClient::skTToStream() {
 
 void KClient::sendEncryptionParamToTServer() {
     this->sendMessage("C-PK",this->t_serverSocket);
-    string message = this->receiveMessage(this->t_serverSocket);
+    string message = this->receiveMessage(this->t_serverSocket,10);
     if(message!="T-PK-READY"){
         perror("ERROR IN PROTOCOL 2-STEP 1");
         return;
     }
     this->sendStream(this->pkCToStream(),this->t_serverSocket);
-    string message1= this->receiveMessage(this->t_serverSocket);
+    string message1= this->receiveMessage(this->t_serverSocket,13);
     if(message1!="T-PK-RECEIVED"){
         perror("ERROR IN PROTOCOL 2-STEP 2");
         return;
     }
     this->sendMessage("C-SMT",this->t_serverSocket);
-    string message2 = this->receiveMessage(this->t_serverSocket);
+    string message2 = this->receiveMessage(this->t_serverSocket,11);
     if(message2!="T-SMT-READY"){
         perror("ERROR IN PROTOCOL 2-STEP 3");
         return;
     }
     this->sendStream(this->ksTToStream(),this->t_serverSocket);
-    string message3 = this->receiveMessage(this->t_serverSocket);
+    string message3 = this->receiveMessage(this->t_serverSocket,14);
     if(message3!="T-SMT-RECEIVED"){
         perror("ERROR IN PROTOCOL 2-STEP 4");
         return;
     }
     this->sendMessage("C-SKT",this->t_serverSocket);
-    string message4 = this->receiveMessage(this->t_serverSocket);
+    string message4 = this->receiveMessage(this->t_serverSocket,11);
     if(message4!="T-SKT-READY"){
         perror("ERROR IN PROTOCOL 2-STEP 5");
         return;
     }
     this->sendStream(this->skTToStream(),this->t_serverSocket);
-    string message5 = this->receiveMessage(this->t_serverSocket);
+    string message5 = this->receiveMessage(this->t_serverSocket,14);
     if(message5!="T-SKT-RECEIVED"){
         perror("ERROR IN PROTOCOL 2-STEP 6");
         return;
