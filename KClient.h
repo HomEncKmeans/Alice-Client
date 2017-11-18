@@ -13,6 +13,8 @@
 #include "Serialization.h"
 #include "clientfhesiutils.h"
 #include "unistd.h"
+#include <map>
+
 using namespace std;
 
 class KClient {
@@ -29,6 +31,7 @@ private:
     unsigned client_p;
     unsigned client_g;
     unsigned client_logQ;
+    unsigned dim; // dimension of the data
     FHEcontext *client_context;
     FHESISecKey *fhesiSecKey;
     FHESIPubKey *fhesiPubKey;
@@ -39,7 +42,10 @@ private:
     ifstream ksCToStream();
     ifstream ksTToStream();
     ifstream skTToStream();
-
+    ifstream encryptedDataToStream(const Ciphertext &);
+    vector<ZZ_pX> loadeddata;
+    vector<ZZ_p> labels;
+    map<size_t,ZZ_pX > encrypted_data_hash_table;
 
     void connectToUServer();
     void connectToTServer();
@@ -53,6 +59,7 @@ public:
     void sendEncryptionParamToTServer();
     void sendEncryptionParamToUServer();
     void sendEncryptedDataToUServer();
+    void receiveResult();
 };
 
 

@@ -42,7 +42,7 @@ Client::Client(unsigned p, unsigned g, unsigned logQ,const string &data, const s
     print(*this->keySwitchSIT);
     this->sendEncryptionParamU(this->addressU,this->portU);
     //this->sendEncryptionParamT(this->addressT,this->portT);
-    //LoadDataPolyX(this->loadeddata,this->labels,this->dim,data,*this->client_context);
+    LoadDataPolyX(this->loadeddata,this->labels,this->dim,data,*this->client_context);
     //print(this->loadeddata[0]);
     //this->sendEncryptedData(this->addressU,this->portU);
 }
