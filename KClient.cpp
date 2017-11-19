@@ -349,5 +349,5 @@ void KClient::receiveResult() {
         cout << "Point ID: " << iter.first << " Point: " << iter.second << endl;
     }
     print("--------------------RESULTS--------------------");
-    //string message=this->receiveMessage(this->u_serverSocket);
+    string message=this->receiveMessage(this->u_serverSocket);
 }
