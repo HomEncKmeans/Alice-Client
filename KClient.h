@@ -42,6 +42,7 @@ private:
     ifstream ksCToStream();
     ifstream ksTToStream();
     ifstream skTToStream();
+    ifstream contextToStream();
     ifstream encryptedDataToStream(const Ciphertext &);
     vector<ZZ_pX> loadeddata;
     vector<ZZ_p> labels;

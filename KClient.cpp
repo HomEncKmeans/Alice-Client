@@ -28,13 +28,14 @@ KClient::KClient(unsigned p, unsigned g, unsigned logQ, const string &data, cons
     this->keySwitchSI = &keySwitchSI1;
     this->fhesiSecKeyT = &fhesiSecKeyT;
     this->keySwitchSIT = &keySwitchSIT;
+    print(context);
     //print(*this->fhesiPubKey);
     //print(*this->fhesiSecKey);
     //print(*this->keySwitchSI);
     //print(*this->fhesiSecKeyT);
     //print(*this->keySwitchSIT);
-    this->connectToTServer();
-    this->sendEncryptionParamToTServer();
+    //this->connectToTServer();
+    //this->sendEncryptionParamToTServer();
     this->connectToUServer();
     this->sendEncryptionParamToUServer();
     LoadDataPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context);
@@ -150,6 +151,7 @@ string KClient::receiveMessage(const int &socket, int buffersize) {
         perror("RECEIVE FAILED");
     }
     message = buffer;
+    message.erase(static_cast<unsigned long>(buffersize));
     this->log(socket, "---> " + message);
     return message;
 }
@@ -191,6 +193,12 @@ ifstream KClient::skTToStream() {
     ofstream filedat("skT.dat");
     Export(filedat, this->fhesiSecKeyT->GetRepresentation());
     return ifstream("skT.dat");
+}
+
+ifstream KClient::contextToStream() {
+    ofstream filedat("context.dat");
+    this->client_context->ExportSIContext(filedat);
+    return ifstream("context.dat");
 }
 
 ifstream KClient::encryptedDataToStream(const Ciphertext &ciphertext) {
@@ -236,6 +244,18 @@ void KClient::sendEncryptionParamToTServer() {
         perror("ERROR IN PROTOCOL 2-STEP 6");
         return;
     }
+    this->sendMessage("C-CONTEXT",this->t_serverSocket);
+    string message6 = this->receiveMessage(this->t_serverSocket, 9);
+    if (message6 != "T-C-READY") {
+        perror("ERROR IN PROTOCOL 2-STEP 7");
+        return;
+    }
+    this->sendStream(this->contextToStream(),this->t_serverSocket);
+    string message7 = this->receiveMessage(this->t_serverSocket, 12);
+    if (message7 != "T-C-RECEIVED") {
+        perror("ERROR IN PROTOCOL 2-STEP 8");
+        return;
+    }
     print("PROTOCOL 2 COMPLETED");
     close(this->t_serverSocket);
 }
@@ -265,14 +285,26 @@ void KClient::sendEncryptionParamToUServer() {
         perror("ERROR IN PROTOCOL 1-STEP 4");
         return;
     }
-
+    this->sendMessage("C-CONTEXT",this->u_serverSocket);
+    string message4 = this->receiveMessage(this->u_serverSocket, 9);
+    if (message4 != "U-C-READY") {
+        perror("ERROR IN PROTOCOL 1-STEP 5");
+        return;
+    }
+    this->sendStream(this->contextToStream(),this->u_serverSocket);
+    string message5 = this->receiveMessage(this->u_serverSocket, 12);
+    if (message5 != "U-C-RECEIVED") {
+        perror("ERROR IN PROTOCOL 2-STEP 8");
+        return;
+    }
     print("PROTOCOL 1 COMPLETED");
     close(this->u_serverSocket);
+    this->u_serverSocket=-1;
 }
 
 void KClient::sendEncryptedDataToUServer() {
     this->connectToUServer();
-    this->sendMessage("C-DATA", this->u_serverSocket);
+    this->sendMessage("C-DA", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 12);
     if (message != "U-DATA-READY") {
         perror("ERROR IN PROTOCOL 3-STEP 1");
@@ -291,17 +323,24 @@ void KClient::sendEncryptedDataToUServer() {
         this->fhesiPubKey->Encrypt(ciphertext, plaintext);
         ifstream cipher = this->encryptedDataToStream(ciphertext);
         std::string buffer((std::istreambuf_iterator<char>(cipher)), std::istreambuf_iterator<char>());
+        cipher.close();
         hash<string> str_hash;
         this->encrypted_data_hash_table[str_hash(buffer)] = this->loadeddata[i];
-        this->sendStream(cipher, this->u_serverSocket);
-        string message2 = this->receiveMessage(this->u_serverSocket, 8);
-        if (message2 != "U-DATA-R") {
+        this->sendStream(this->encryptedDataToStream(ciphertext), this->u_serverSocket);
+        string message2 = this->receiveMessage(this->u_serverSocket, 17);
+        if (message2 != "U-DATA-P-RECEIVED") {
             perror("ERROR IN PROTOCOL 3-STEP 3");
             return;
         }
-
     }
-    this->sendMessage("C-DATA-TF", this->u_serverSocket);
+    this->sendMessage("C-DATA-E", this->u_serverSocket);
+    string message1 = this->receiveMessage(this->u_serverSocket, 15);
+    if (message1 != "U-DATA-RECEIVED") {
+        perror("ERROR IN PROTOCOL 3-STEP 4");
+        return;
+    }
+    print("PROTOCOL 3 COMPLETED");
+
 }
 
 void KClient::receiveResult() {
@@ -309,5 +348,6 @@ void KClient::receiveResult() {
     for (auto &iter : this->encrypted_data_hash_table) {
         cout << "Point ID: " << iter.first << " Point: " << iter.second << endl;
     }
-    this->receiveMessage(this->u_serverSocket);
+    print("--------------------RESULTS--------------------");
+    //string message=this->receiveMessage(this->u_serverSocket);
 }
