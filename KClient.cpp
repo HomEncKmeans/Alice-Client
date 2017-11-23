@@ -34,8 +34,8 @@ KClient::KClient(unsigned p, unsigned g, unsigned logQ, const string &data, cons
     //print(*this->keySwitchSI);
     //print(*this->fhesiSecKeyT);
     //print(*this->keySwitchSIT);
-    //this->connectToTServer();
-    //this->sendEncryptionParamToTServer();
+    this->connectToTServer();
+    this->sendEncryptionParamToTServer();
     this->connectToUServer();
     this->sendEncryptionParamToUServer();
     LoadDataPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context);
