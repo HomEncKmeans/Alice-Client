@@ -325,7 +325,8 @@ void KClient::sendEncryptedDataToUServer() {
         std::string buffer((std::istreambuf_iterator<char>(cipher)), std::istreambuf_iterator<char>());
         cipher.close();
         hash<string> str_hash;
-        this->encrypted_data_hash_table[str_hash(buffer)] = this->loadeddata[i];
+        uint32_t indext= (uint32_t)str_hash(buffer);
+        this->encrypted_data_hash_table[indext] = this->loadeddata[i];
         this->sendStream(this->encryptedDataToStream(ciphertext), this->u_serverSocket);
         string message2 = this->receiveMessage(this->u_serverSocket, 17);
         if (message2 != "U-DATA-P-RECEIVED") {
@@ -358,9 +359,9 @@ void KClient::receiveResult() {
             return;
         }
         this->sendMessage("U-P-R",this->u_serverSocket);
-        u_int32_t hash_value;
+        uint32_t hash_value;
         auto *data = (char *) &hash_value;
-        if (recv(this->u_serverSocket, data, sizeof(u_int32_t), 0) < 0) {
+        if (recv(this->u_serverSocket, data, sizeof(uint32_t), 0) < 0) {
             perror("RECEIVE IDENTITY ERROR. ERROR IN PROTOCOL 8-STEP 3");
         }
         ntohl(hash_value);
@@ -373,9 +374,8 @@ void KClient::receiveResult() {
         }
         ntohl(index);
         this->log(this->u_serverSocket, "--> INDEX: " + to_string(index));
-        size_t hvalue=hash_value;
         unsigned clusterindex=index;
-        this->results[hvalue]=clusterindex;
+        this->results[hash_value]=clusterindex;
         this->sendMessage("P-CI-R",this->u_serverSocket);
     }
     string message2=this->receiveMessage(this->u_serverSocket,10);
