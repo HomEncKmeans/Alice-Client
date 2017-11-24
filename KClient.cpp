@@ -345,9 +345,50 @@ void KClient::sendEncryptedDataToUServer() {
 
 void KClient::receiveResult() {
     print("WAITING FOR KMEANS RESULTS");
-    for (auto &iter : this->encrypted_data_hash_table) {
-        cout << "Point ID: " << iter.first << " Point: " << iter.second << endl;
+    string message=this->receiveMessage(this->u_serverSocket,8);
+    if (message != "U-RESULT") {
+        perror("ERROR IN PROTOCOL 8-STEP 1");
+        return;
     }
+    this->sendMessage("K-READY",this->u_serverSocket);
+    for(unsigned i=0;i<this->encrypted_data_hash_table.size();i++){
+        string message1=this->receiveMessage(this->u_serverSocket,3);
+        if (message1 != "U-P") {
+            perror("ERROR IN PROTOCOL 8-STEP 2");
+            return;
+        }
+        this->sendMessage("U-P-R",this->u_serverSocket);
+        u_int32_t hash_value;
+        auto *data = (char *) &hash_value;
+        if (recv(this->u_serverSocket, data, sizeof(u_int32_t), 0) < 0) {
+            perror("RECEIVE IDENTITY ERROR. ERROR IN PROTOCOL 8-STEP 3");
+        }
+        ntohl(hash_value);
+        this->log(this->u_serverSocket, "--> POINT ID: " + to_string(hash_value));
+        this->sendMessage("P-I-R",this->u_serverSocket);
+        uint32_t index;
+        auto *data1 = (char *) &index;
+        if (recv(this->u_serverSocket, data1, sizeof(uint32_t), 0) < 0) {
+            perror("RECEIVE CLUSTER INDEX ERROR. ERROR IN PROTOCOL 8-STEP 4");
+        }
+        ntohl(index);
+        this->log(this->u_serverSocket, "--> INDEX: " + to_string(index));
+        size_t hvalue=hash_value;
+        unsigned clusterindex=index;
+        this->results[hvalue]=clusterindex;
+        this->sendMessage("P-CI-R",this->u_serverSocket);
+    }
+    string message2=this->receiveMessage(this->u_serverSocket,10);
+    if (message2 != "U-RESULT-E") {
+        perror("ERROR IN PROTOCOL 8-STEP 5");
+        return;
+    }
+    this->sendMessage("K-END",this->u_serverSocket);
+    close(this->u_serverSocket);
+    this->u_serverSocket=-1;
     print("--------------------RESULTS--------------------");
-    string message=this->receiveMessage(this->u_serverSocket);
+    for (auto &iter : this->encrypted_data_hash_table) {
+        cout << "Point ID: " << iter.first << " Point: " << iter.second <<" Cluster: "<< this->results[iter.first]<< endl;
+    }
+
 }

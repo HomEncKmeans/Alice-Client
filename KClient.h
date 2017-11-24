@@ -47,7 +47,7 @@ private:
     vector<ZZ_pX> loadeddata;
     vector<ZZ_p> labels;
     map<size_t,ZZ_pX > encrypted_data_hash_table;
-
+    map<size_t,unsigned> results;
     void connectToUServer();
     void connectToTServer();
 
