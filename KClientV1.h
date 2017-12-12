@@ -50,6 +50,7 @@ private:
     vector<vector<ZZ_pX>> loadeddata;
     vector<ZZ_p> labels;
     map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
+    map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
     map<uint32_t ,unsigned> results;
     map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
@@ -65,6 +66,7 @@ public:
     void sendEncryptionParamToTServer();
     void sendEncryptionParamToUServer();
     void sendEncryptedDataToUServer();
+    void sendUnEncryptedDataToTServer();
     void receiveResult();
 };
 
