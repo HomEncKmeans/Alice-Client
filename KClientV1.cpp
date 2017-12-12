@@ -35,8 +35,8 @@ KClientV1::KClientV1(unsigned p, unsigned g, unsigned logQ, const string &data, 
     LoadDataVecPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context, this->loadedataToInt);
     this->createStruct();
     //this->sendEncryptedDataToUServer();
-    //this->connectToTServer();
-    //this->sendEncryptionParamToTServer();
+    this->connectToTServer();
+    this->sendEncryptionParamToTServer();
     this->sendUnEncryptedDataToTServer();
     //this->receiveResult();
 }
@@ -257,6 +257,9 @@ void KClientV1::sendEncryptionParamToTServer() {
         return;
     }
     print("PROTOCOL 2 COMPLETED");
+    close(this->t_serverSocket);
+    this->t_serverSocket = -1;
+
 }
 
 void KClientV1::sendEncryptionParamToUServer() {
@@ -402,6 +405,7 @@ void KClientV1::createStruct() {
 
 
 void KClientV1::sendUnEncryptedDataToTServer() {
+    this->connectToTServer();
     this->sendMessage("C-DA", this->t_serverSocket);
     string message = this->receiveMessage(this->t_serverSocket, 12);
     if (message != "T-DATA-READY") {
@@ -479,7 +483,7 @@ void KClientV1::sendUnEncryptedDataToTServer() {
 
     }
     this->sendMessage("C-DATA-E", this->t_serverSocket);
-    string message7 = this->receiveMessage(this->u_serverSocket, 15);
+    string message7 = this->receiveMessage(this->t_serverSocket, 15);
     if (message7 != "T-DATA-RECEIVED") {
         perror("ERROR IN PROTOCOL 3.1-STEP 11");
         return;
@@ -532,7 +536,7 @@ void KClientV1::receiveResult() {
     this->t_serverSocket = -1;
     print("--------------------RESULTS--------------------");
     for (auto &iter : this->encrypted_data_hash_table) {
-        cout << "Point ID: " << iter.first << " Point: " << iter.second << " Cluster: " << this->results[iter.first]
+        cout << "Point ID: " << iter.first  << " Cluster: " << this->results[iter.first]
              << endl;
     }
 
