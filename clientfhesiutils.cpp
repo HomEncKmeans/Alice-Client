@@ -43,8 +43,10 @@ bool LoadDataPolyX(vector<ZZ_pX> &rawData, vector<ZZ_p> &labels, unsigned &dim, 
     return true;
 
 }
+
+
 bool LoadDataVecPolyX(vector<vector<ZZ_pX>> &rawData, vector<ZZ_p> &labels, unsigned &dim, const string &filename,
-                      FHEcontext &context) {
+                      FHEcontext &context, vector<vector<uint32_t >> &rawDatatoInt) {
     int label, n;
     long phim =context.zMstar.phiM();
     ifstream fin;
@@ -64,19 +66,22 @@ bool LoadDataVecPolyX(vector<vector<ZZ_pX>> &rawData, vector<ZZ_p> &labels, unsi
 
     ZZ_pX data;
     data.SetMaxLength(1);
-
+    uint32_t coeftemp;
     long temp;
     for (int i = 0; i < n; i++) {
         vector<ZZ_pX> point;
+        vector<uint32_t> pointToInt;
         for (unsigned j = 0; j < dim; j++) {
             fin>> temp;
+            coeftemp= static_cast<uint32_t>(temp);
             SetCoeff(data,0,temp);
             point.push_back(data);
+            pointToInt.push_back(coeftemp);
         }
         fin >> label;
         rawData.push_back(point);
         labels.push_back(to_ZZ_p(label));
-
+        rawDatatoInt.push_back(pointToInt);
     }
 
     return true;
@@ -115,4 +120,13 @@ void timeCalulator(const clock_t &c_start, const chrono::high_resolution_clock::
               << "Wall clock time passed: "
               << chrono::duration<double, milli>(t_end-t_start).count()
               << " ms"<<endl;
+}
+
+
+
+long combine(long a, long b) {
+    int times = 1;
+    while (times <= b)
+        times *= 10;
+    return a*times + b;
 }

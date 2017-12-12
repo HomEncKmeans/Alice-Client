@@ -14,6 +14,8 @@
 #include "clientfhesiutils.h"
 #include "unistd.h"
 #include <map>
+#include <cstdlib>
+#include <ctime>
 
 using namespace std;
 
@@ -26,7 +28,7 @@ private:
     string t_serverIP;
     int t_serverPort;
     int t_serverSocket=-1;
-
+    bool verbose;
 
     unsigned client_p;
     unsigned client_g;
@@ -44,15 +46,18 @@ private:
     ifstream skTToStream();
     ifstream contextToStream();
     ifstream encryptedDataToStream(const Ciphertext &);
-    vector<ZZ_pX> loadeddata;
+    vector<vector<uint32_t>> loadedataToInt;
+    vector<vector<ZZ_pX>> loadeddata;
     vector<ZZ_p> labels;
-    map<uint32_t ,ZZ_pX > encrypted_data_hash_table;
+    map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
     map<uint32_t ,unsigned> results;
+    map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
     void connectToTServer();
+    void createStruct();
 
 public:
-    KClientV1(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned);
+    KClientV1(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,bool verbose=true);
     bool sendMessage(string, int socket);
     bool sendStream(ifstream, int);
     string receiveMessage(const int &,int buffersize=64);
