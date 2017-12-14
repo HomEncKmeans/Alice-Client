@@ -30,15 +30,15 @@ KClientV1::KClientV1(unsigned p, unsigned g, unsigned logQ, const string &data, 
     this->fhesiSecKeyT = &fhesiSecKeyT;
     this->keySwitchSIT = &keySwitchSIT;
     print(context);
-    //this->connectToUServer();
-    //this->sendEncryptionParamToUServer();
+    this->connectToUServer();
+    this->sendEncryptionParamToUServer();
     LoadDataVecPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context, this->loadedataToInt);
     this->createStruct();
-    //this->sendEncryptedDataToUServer();
+    this->sendEncryptedDataToUServer();
     this->connectToTServer();
     this->sendEncryptionParamToTServer();
     this->sendUnEncryptedDataToTServer();
-    //this->receiveResult();
+    this->receiveResult();
 }
 
 void KClientV1::connectToTServer() {
@@ -480,7 +480,6 @@ void KClientV1::sendUnEncryptedDataToTServer() {
                 return;
             }
         }
-
     }
     this->sendMessage("C-DATA-E", this->t_serverSocket);
     string message7 = this->receiveMessage(this->t_serverSocket, 15);
@@ -506,7 +505,7 @@ void KClientV1::receiveResult() {
             perror("ERROR IN PROTOCOL 8.1-STEP 2");
             return;
         }
-        this->sendMessage("T-P-R", this->u_serverSocket);
+        this->sendMessage("C-P-R", this->u_serverSocket);
         uint32_t identifier;
         auto *data = (char *) &identifier;
         if (recv(this->u_serverSocket, data, sizeof(uint32_t), 0) < 0) {
