@@ -3,7 +3,8 @@
 //
 
 //#include "KClient.h"
-#include "KClientV1.h"
+//#include "KClientV1.h"
+#include "KClientV2.h"
 #include <ctime>
 #include <chrono>
 #include <iomanip>
@@ -14,7 +15,9 @@ int main(){
     unsigned p=23;
     unsigned g=7;
     unsigned logQ=117;
-    KClientV1 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    //KClientV1 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    KClientV2 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+
     //client.sendEncryptedData();
     //client.sendPublicKey("127.0.0.1",5001);
     //client.conn("127.0.0.1",5001);
