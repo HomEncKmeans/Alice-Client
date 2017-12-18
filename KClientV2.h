@@ -44,12 +44,16 @@ private:
     ifstream skTToStream();
     ifstream contextToStream();
     ifstream encryptedDataToStream(const Ciphertext &);
-    vector<ZZ_pX> loadeddata;
+    vector<vector<uint32_t>> loadedataToInt;
+    vector<vector<ZZ_pX>> loadeddata;
     vector<ZZ_p> labels;
-    map<uint32_t ,ZZ_pX > encrypted_data_hash_table;
+    map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
+    map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
     map<uint32_t ,unsigned> results;
+    map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
     void connectToTServer();
+    void createStruct();
 
 public:
     KClientV2(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,bool verbose=true);

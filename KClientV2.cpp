@@ -14,7 +14,7 @@ KClientV2::KClientV2(unsigned p, unsigned g, unsigned logQ, const string &data, 
     this->client_p = p;
     this->client_g = g;
     this->client_logQ = logQ;
-    print("K-CLIENT");
+    print("K-CLIENT V2");
     FHEcontext context(this->client_p - 1, this->client_logQ, this->client_p, this->client_g);
     activeContext = &context;
     this->client_context = &context;
@@ -39,7 +39,8 @@ KClientV2::KClientV2(unsigned p, unsigned g, unsigned logQ, const string &data, 
     this->sendEncryptionParamToTServer();
     this->connectToUServer();
     this->sendEncryptionParamToUServer();
-    LoadDataPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context);
+    LoadDataVecPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context, this->loadedataToInt);
+    this->createStruct();
     this->sendEncryptedDataToUServer();
     this->receiveResult();
 }
@@ -313,85 +314,141 @@ void KClientV2::sendEncryptedDataToUServer() {
         perror("ERROR IN PROTOCOL 3-STEP 1");
         return;
     }
-    for (unsigned i = 0; i < this->loadeddata.size(); i++) {
-        log(this->u_serverSocket, "<--- POINT-" + to_string(i));
-        this->sendMessage("C-DATA-P", this->u_serverSocket);
-        string message1 = this->receiveMessage(this->u_serverSocket, 14);
-        if (message1 != "U-DATA-P-READY") {
-            perror("ERROR IN PROTOCOL 3-STEP 2");
-            return;
-        }
-        Ciphertext ciphertext(*this->fhesiPubKey);
-        Plaintext plaintext(*this->client_context, this->loadeddata[i]);
-        this->fhesiPubKey->Encrypt(ciphertext, plaintext);
-        ifstream cipher = this->encryptedDataToStream(ciphertext);
-        std::string buffer((std::istreambuf_iterator<char>(cipher)), std::istreambuf_iterator<char>());
-        cipher.close();
-        hash<string> str_hash;
-        uint32_t indext= (uint32_t)str_hash(buffer);
-        this->encrypted_data_hash_table[indext] = this->loadeddata[i];
-        this->sendStream(this->encryptedDataToStream(ciphertext), this->u_serverSocket);
-        string message2 = this->receiveMessage(this->u_serverSocket, 17);
-        if (message2 != "U-DATA-P-RECEIVED") {
-            perror("ERROR IN PROTOCOL 3-STEP 3");
-            return;
-        }
+    uint32_t dimension = this->dim;
+    htonl(dimension);
+    if (0 > send(this->u_serverSocket, &dimension, sizeof(uint32_t), 0)) {
+        perror("ERROR IN PROTOCOL 3-STEP-2.");
+        return;
     }
-    this->sendMessage("C-DATA-E", this->u_serverSocket);
-    string message1 = this->receiveMessage(this->u_serverSocket, 15);
-    if (message1 != "U-DATA-RECEIVED") {
+    string message1 = this->receiveMessage(this->u_serverSocket, 12);
+    if (message1 != "U-D-RECEIVED") {
+        perror("ERROR IN PROTOCOL 3-STEP 2");
+        return;
+    }
+    uint32_t numberofpoints = static_cast<uint32_t>(this->loadeddata.size());
+    htonl(numberofpoints);
+    if (0 > send(this->u_serverSocket, &numberofpoints, sizeof(uint32_t), 0)) {
+        perror("ERROR IN PROTOCOL 3-STEP 3.");
+        return;
+    }
+    string message2 = this->receiveMessage(this->u_serverSocket, 12);
+    if (message2 != "U-N-RECEIVED") {
+        perror("ERROR IN PROTOCOL 3-STEP 3");
+        return;
+    }
+    this->sendMessage("C-DATA-P", this->u_serverSocket);
+    string message3 = this->receiveMessage(this->u_serverSocket, 14);
+    if (message3 != "U-DATA-P-READY") {
         perror("ERROR IN PROTOCOL 3-STEP 4");
         return;
     }
-    print("PROTOCOL 3 COMPLETED");
 
+    for (auto &iter:this->encrypted_data_hash_table) {
+        log(this->u_serverSocket, "<--- POINT-" + to_string(iter.first));
+        uint32_t pointid = iter.first;
+        htonl(pointid);
+        if (0 > send(this->u_serverSocket, &pointid, sizeof(uint32_t), 0)) {
+            perror("ERROR IN PROTOCOL 3-STEP 5.");
+            return;
+        }
+        string message4 = this->receiveMessage(this->u_serverSocket, 14);
+        if (message4 != "U-P-I-RECEIVED") {
+            perror("ERROR IN PROTOCOL 3-STEP 6");
+            return;
+        }
+        for (unsigned i = 0; i < iter.second.size(); i++) {
+            uint32_t coef_index = i;
+            htonl(coef_index);
+            if (0 > send(this->u_serverSocket, &coef_index, sizeof(uint32_t), 0)) {
+                perror("ERROR IN PROTOCOL 3-STEP 7.");
+                return;
+            }
+            string message5 = this->receiveMessage(this->u_serverSocket, 16);
+            if (message5 != "U-INDEX-RECEIVED") {
+                perror("ERROR IN PROTOCOL 3-STEP 8");
+                return;
+            }
+            Ciphertext ciphertext(*this->fhesiPubKey);
+            Plaintext plaintext(*this->client_context, iter.second[i]);
+            this->fhesiPubKey->Encrypt(ciphertext, plaintext);
+            this->sendStream(this->encryptedDataToStream(ciphertext), this->u_serverSocket);
+            string message6 = this->receiveMessage(this->u_serverSocket, 15);
+            if (message6 != "U-COEF-RECEIVED") {
+                perror("ERROR IN PROTOCOL 3-STEP 9");
+                return;
+            }
+        }
+
+
+    }
+    this->sendMessage("C-DATA-E", this->u_serverSocket);
+    string message7 = this->receiveMessage(this->u_serverSocket, 15);
+    if (message7 != "U-DATA-RECEIVED") {
+        perror("ERROR IN PROTOCOL 3-STEP 10");
+        return;
+    }
+    print("PROTOCOL 3 COMPLETED");
 }
 
 void KClientV2::receiveResult() {
     print("WAITING FOR KMEANS RESULTS");
-    string message=this->receiveMessage(this->u_serverSocket,8);
+    string message = this->receiveMessage(this->u_serverSocket, 8);
     if (message != "U-RESULT") {
-        perror("ERROR IN PROTOCOL 8-STEP 1");
+        perror("ERROR IN PROTOCOL 8.1-STEP 1");
         return;
     }
-    this->sendMessage("K-READY",this->u_serverSocket);
-    for(unsigned i=0;i<this->encrypted_data_hash_table.size();i++){
-        string message1=this->receiveMessage(this->u_serverSocket,3);
+    this->sendMessage("C-READY", this->u_serverSocket);
+    for (unsigned i = 0; i < this->encrypted_data_hash_table.size(); i++) {
+        string message1 = this->receiveMessage(this->u_serverSocket, 3);
         if (message1 != "U-P") {
-            perror("ERROR IN PROTOCOL 8-STEP 2");
+            perror("ERROR IN PROTOCOL 8.1-STEP 2");
             return;
         }
-        this->sendMessage("U-P-R",this->u_serverSocket);
-        uint32_t hash_value;
-        auto *data = (char *) &hash_value;
+        this->sendMessage("C-P-R", this->u_serverSocket);
+        uint32_t identifier;
+        auto *data = (char *) &identifier;
         if (recv(this->u_serverSocket, data, sizeof(uint32_t), 0) < 0) {
-            perror("RECEIVE IDENTITY ERROR. ERROR IN PROTOCOL 8-STEP 3");
+            perror("RECEIVE IDENTITY ERROR. ERROR IN PROTOCOL 8.1-STEP 3");
         }
-        ntohl(hash_value);
-        this->log(this->u_serverSocket, "--> POINT ID: " + to_string(hash_value));
-        this->sendMessage("P-I-R",this->u_serverSocket);
+        ntohl(identifier);
+        this->log(this->u_serverSocket, "--> POINT ID: " + to_string(identifier));
+        this->sendMessage("P-I-R", this->u_serverSocket);
         uint32_t index;
         auto *data1 = (char *) &index;
         if (recv(this->u_serverSocket, data1, sizeof(uint32_t), 0) < 0) {
-            perror("RECEIVE CLUSTER INDEX ERROR. ERROR IN PROTOCOL 8-STEP 4");
+            perror("RECEIVE CLUSTER INDEX ERROR. ERROR IN PROTOCOL 8.1-STEP 4");
         }
         ntohl(index);
         this->log(this->u_serverSocket, "--> INDEX: " + to_string(index));
-        unsigned clusterindex=index;
-        this->results[hash_value]=clusterindex;
-        this->sendMessage("P-CI-R",this->u_serverSocket);
+        unsigned clusterindex = index;
+        this->results[identifier] = clusterindex;
+        this->sendMessage("P-CI-R", this->u_serverSocket);
     }
-    string message2=this->receiveMessage(this->u_serverSocket,10);
+    string message2 = this->receiveMessage(this->u_serverSocket, 10);
     if (message2 != "U-RESULT-E") {
-        perror("ERROR IN PROTOCOL 8-STEP 5");
+        perror("ERROR IN PROTOCOL 8.1-STEP 5");
         return;
     }
-    this->sendMessage("K-END",this->u_serverSocket);
+    this->sendMessage("C-END", this->u_serverSocket);
     close(this->u_serverSocket);
-    this->u_serverSocket=-1;
+    this->u_serverSocket = -1;
     print("--------------------RESULTS--------------------");
     for (auto &iter : this->encrypted_data_hash_table) {
-        cout << "Point ID: " << iter.first << " Point: " << iter.second <<" Cluster: "<< this->results[iter.first]<< endl;
+        cout << "Point ID: " << iter.first  << " Cluster: " << this->results[iter.first]
+             << endl;
     }
+}
 
+void KClientV2::createStruct() {
+    srand(static_cast<unsigned int>(time(NULL)));
+    for (unsigned i = 0; i < this->loadeddata.size(); i++) {
+        vector<ZZ_pX> point = loadeddata[i];
+        vector<uint32_t> pointToInt = loadedataToInt[i];
+        uint32_t identifier;
+        identifier = static_cast<uint32_t>(rand());
+        this->encrypted_data_hash_table[identifier] = point;
+        this->results[identifier] = 0;
+        this->identifiers[identifier] = identifier;
+        this->unencrypted_data_hash_table[identifier] = pointToInt;
+    }
 }

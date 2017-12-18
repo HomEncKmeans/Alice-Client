@@ -505,18 +505,18 @@ void KClientV1::receiveResult() {
             perror("ERROR IN PROTOCOL 8.1-STEP 2");
             return;
         }
-        this->sendMessage("C-P-R", this->u_serverSocket);
+        this->sendMessage("C-P-R", this->t_serverSocket);
         uint32_t identifier;
         auto *data = (char *) &identifier;
-        if (recv(this->u_serverSocket, data, sizeof(uint32_t), 0) < 0) {
+        if (recv(this->t_serverSocket, data, sizeof(uint32_t), 0) < 0) {
             perror("RECEIVE IDENTITY ERROR. ERROR IN PROTOCOL 8.1-STEP 3");
         }
         ntohl(identifier);
-        this->log(this->u_serverSocket, "--> POINT ID: " + to_string(identifier));
+        this->log(this->t_serverSocket, "--> POINT ID: " + to_string(identifier));
         this->sendMessage("P-I-R", this->t_serverSocket);
         uint32_t index;
         auto *data1 = (char *) &index;
-        if (recv(this->u_serverSocket, data1, sizeof(uint32_t), 0) < 0) {
+        if (recv(this->t_serverSocket, data1, sizeof(uint32_t), 0) < 0) {
             perror("RECEIVE CLUSTER INDEX ERROR. ERROR IN PROTOCOL 8.1-STEP 4");
         }
         ntohl(index);
