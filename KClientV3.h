@@ -2,8 +2,8 @@
 // Created by george on 16/11/2017.
 //
 
-#ifndef KClientV2_KClientV2_H
-#define KClientV2_KClientV2_H
+#ifndef KClientV3_KClientV3_H
+#define KClientV3_KClientV3_H
 
 #include <iostream>
 #include <fstream>
@@ -17,7 +17,7 @@
 
 using namespace std;
 
-class KClientV2 {
+class KClientV3 {
 
 private:
     string u_serverIP;
@@ -49,18 +49,18 @@ private:
     vector<ZZ_p> labels;
     map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
     map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
-    map<uint32_t ,unsigned> results;
+    map<uint32_t ,vector<long>> results;
     map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
     void connectToTServer();
     void createStruct();
 
 public:
-    KClientV2(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,bool verbose=true);
+    KClientV3(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,bool verbose=true);
     bool sendMessage(string, int socket);
     bool sendStream(ifstream, int);
     string receiveMessage(const int &,int buffersize=64);
-
+    ifstream receiveStream(int,string filename="temp.dat");
     void log(int,string);
     void sendEncryptionParamToTServer();
     void sendEncryptionParamToUServer();
@@ -69,4 +69,4 @@ public:
 };
 
 
-#endif //KClientV2_KClientV2_H
+#endif //
