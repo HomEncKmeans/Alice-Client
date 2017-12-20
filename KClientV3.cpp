@@ -456,8 +456,9 @@ void KClientV3::receiveResult() {
             ind_of_cluster = coeff(index_of_cluster, 0);
             const ZZ &x = rep(ind_of_cluster);
             long t;
+            print(t);
             t = to_long(x);
-            point_results[j] = t;
+            point_results.push_back(t);
             this->sendMessage("P-CI-R", this->u_serverSocket);
         }
         this->results[identifier] = point_results;
