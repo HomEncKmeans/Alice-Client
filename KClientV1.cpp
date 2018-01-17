@@ -108,14 +108,16 @@ bool KClientV1::sendMessage(string message, int socket) {
 }
 
 bool KClientV1::sendStream(ifstream data, int socket) {
+    uint32_t CHUNK_SIZE = 1000;
     streampos begin, end;
     begin = data.tellg();
     data.seekg(0, ios::end);
     end = data.tellg();
     streampos size = end - begin;
-    uint32_t sizek = size;
-    auto *memblock = new char[sizek];
+    uint32_t sizek;
+    sizek = static_cast<uint32_t>(size);
     data.seekg(0, std::ios::beg);
+    auto *memblock = new char[sizek];
     data.read(memblock, sizek);
     data.close();
     htonl(sizek);
@@ -125,14 +127,38 @@ bool KClientV1::sendStream(ifstream data, int socket) {
     } else {
         this->log(socket, "<--- " + to_string(sizek));
         if (this->receiveMessage(socket, 7) == "SIZE-OK") {
-            ssize_t r = (send(socket, memblock, static_cast<size_t>(size), 0));
-            print(r); //for debugging
-            if (r < 0) {
-                perror("SEND FAILED.");
-                return false;
-            } else {
-                return true;
+            auto *buffer = new char[CHUNK_SIZE];
+            uint32_t beginmem = 0;
+            uint32_t endmem = 0;
+            uint32_t num_of_blocks = sizek / CHUNK_SIZE;
+            uint32_t rounds = 0;
+            while (rounds <= num_of_blocks) {
+                if (rounds == num_of_blocks) {
+                    uint32_t rest = sizek - (num_of_blocks) * CHUNK_SIZE;
+                    endmem += rest;
+                    copy(memblock + beginmem, memblock + endmem, buffer);
+                    ssize_t r = (send(socket, buffer, rest, 0));
+                    print(r);
+                    rounds++;
+                    if (r < 0) {
+                        perror("SEND FAILED.");
+                        return false;
+                    }
+                } else {
+                    endmem += CHUNK_SIZE;
+                    copy(memblock + beginmem, memblock + endmem, buffer);
+                    beginmem = endmem;
+                    ssize_t r = (send(socket, buffer, 1000, 0));
+                    print(r);
+                    rounds++;
+                    if (r < 0) {
+                        perror("SEND FAILED.");
+                        return false;
+                    }
+                }
             }
+            return true;
+
         } else {
             perror("SEND SIZE ERROR");
             return false;
@@ -535,7 +561,7 @@ void KClientV1::receiveResult() {
     this->t_serverSocket = -1;
     print("--------------------RESULTS--------------------");
     for (auto &iter : this->encrypted_data_hash_table) {
-        cout << "Point ID: " << iter.first  << " Cluster: " << this->results[iter.first]
+        cout << "Point ID: " << iter.first << " Cluster: " << this->results[iter.first]
              << endl;
     }
 
