@@ -3,9 +3,9 @@
 //
 
 //#include "KClient.h"
-#include "KClientV1.h"
+//#include "KClientV1.h"
 //#include "KClientV2.h"
-//#include "KClientV3.h"
+#include "KClientV3.h"
 
 #include <ctime>
 #include <chrono>
@@ -16,12 +16,12 @@ int main(){
     auto t_start = chrono::high_resolution_clock::now();
     unsigned p= 2663;//1487;//1487
     unsigned g=7;
-    unsigned logQ=76; //45
-    //KClient client(p,g,logQ,"../script/sample100x2.dat","127.0.0.1",5001,"127.0.0.1",5002);
+    unsigned logQ=79; //4
+    //KClient client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002);
 
-    KClientV1 client(p,g,logQ,"../sample1.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
-    //KClientV2 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
-    //KClientV3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    //KClientV1 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    //KClientV2 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    KClientV3 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
 
     std::clock_t c_end = std::clock();
     auto t_end = std::chrono::high_resolution_clock::now();

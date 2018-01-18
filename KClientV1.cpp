@@ -108,7 +108,7 @@ bool KClientV1::sendMessage(string message, int socket) {
 }
 
 bool KClientV1::sendStream(ifstream data, int socket) {
-    uint32_t CHUNK_SIZE = 1000;
+    uint32_t CHUNK_SIZE = 10000;
     streampos begin, end;
     begin = data.tellg();
     data.seekg(0, ios::end);
@@ -138,7 +138,6 @@ bool KClientV1::sendStream(ifstream data, int socket) {
                     endmem += rest;
                     copy(memblock + beginmem, memblock + endmem, buffer);
                     ssize_t r = (send(socket, buffer, rest, 0));
-                    print(r);
                     rounds++;
                     if (r < 0) {
                         perror("SEND FAILED.");
@@ -148,8 +147,7 @@ bool KClientV1::sendStream(ifstream data, int socket) {
                     endmem += CHUNK_SIZE;
                     copy(memblock + beginmem, memblock + endmem, buffer);
                     beginmem = endmem;
-                    ssize_t r = (send(socket, buffer, 1000, 0));
-                    print(r);
+                    ssize_t r = (send(socket, buffer, 10000, 0));
                     rounds++;
                     if (r < 0) {
                         perror("SEND FAILED.");
