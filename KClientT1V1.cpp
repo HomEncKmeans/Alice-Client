@@ -2,9 +2,9 @@
 // Created by george on 16/11/2017.
 //
 
-#include "KClient.h"
+#include "KClientT1V1.h"
 
-KClient::KClient(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
+KClientT1V1::KClientT1V1(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
                  unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort) {
     this->u_serverIP = u_serverIP;
     this->u_serverPort = u_serverPort;
@@ -34,16 +34,18 @@ KClient::KClient(unsigned p, unsigned g, unsigned logQ, const string &data, cons
     //print(*this->keySwitchSI);
     //print(*this->fhesiSecKeyT);
     //print(*this->keySwitchSIT);
+
     this->connectToTServer();
     this->sendEncryptionParamToTServer();
     this->connectToUServer();
     this->sendEncryptionParamToUServer();
+
     LoadDataPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context);
     this->sendEncryptedDataToUServer();
     this->receiveResult();
 }
 
-void KClient::connectToTServer() {
+void KClientT1V1::connectToTServer() {
     struct sockaddr_in t_server_address;
     if (this->t_serverSocket == -1) {
         this->t_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -65,13 +67,13 @@ void KClient::connectToTServer() {
         perror("ERROR. CONNECTION FAILED TO TSERVER");
 
     } else {
-        print("KCLIENT CONNECTED TO TSERVER");
+        print("KClientT1V1 CONNECTED TO TSERVER");
 
     }
 
 }
 
-void KClient::connectToUServer() {
+void KClientT1V1::connectToUServer() {
     struct sockaddr_in u_server_address;
     if (this->u_serverSocket == -1) {
         this->u_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -93,13 +95,13 @@ void KClient::connectToUServer() {
         perror("ERROR. CONNECTION FAILED TO USERVER");
 
     } else {
-        print("KCLIENT CONNECTED TO USERVER");
+        print("KClientT1V1 CONNECTED TO USERVER");
 
     }
 
 }
 
-bool KClient::sendMessage(string message, int socket) {
+bool KClientT1V1::sendMessage(string message, int socket) {
     if (send(socket, message.c_str(), strlen(message.c_str()), 0) < 0) {
         perror("SEND FAILED.");
         return false;
@@ -109,7 +111,7 @@ bool KClient::sendMessage(string message, int socket) {
     }
 }
 
-bool KClient::sendStream(ifstream data, int socket) {
+bool KClientT1V1::sendStream(ifstream data, int socket) {
     uint32_t CHUNK_SIZE = 10000;
     streampos begin, end;
     begin = data.tellg();
@@ -167,7 +169,7 @@ bool KClient::sendStream(ifstream data, int socket) {
 
 }
 
-string KClient::receiveMessage(const int &socket, int buffersize) {
+string KClientT1V1::receiveMessage(const int &socket, int buffersize) {
     char buffer[buffersize];
     string message;
     if (recv(socket, buffer, static_cast<size_t>(buffersize), 0) < 0) {
@@ -179,7 +181,7 @@ string KClient::receiveMessage(const int &socket, int buffersize) {
     return message;
 }
 
-void KClient::log(int socket, string message) {
+void KClientT1V1::log(int socket, string message) {
     sockaddr address;
     socklen_t addressLength;
     sockaddr_in *addressInternet;
@@ -194,43 +196,43 @@ void KClient::log(int socket, string message) {
 }
 
 
-ifstream KClient::pkCToStream() {
+ifstream KClientT1V1::pkCToStream() {
     ofstream filedat("pk.dat");
     Export(filedat, this->fhesiPubKey->GetRepresentation());
     return ifstream("pk.dat", ios::binary);
 }
 
-ifstream KClient::ksCToStream() {
+ifstream KClientT1V1::ksCToStream() {
     ofstream filedat("ksC.dat");
     Export(filedat, this->keySwitchSI->GetRepresentation());
     return ifstream("ksC.dat");
 }
 
-ifstream KClient::ksTToStream() {
+ifstream KClientT1V1::ksTToStream() {
     ofstream filedat("ksT.dat");
     Export(filedat, this->keySwitchSIT->GetRepresentation());
     return ifstream("ksT.dat");
 }
 
-ifstream KClient::skTToStream() {
+ifstream KClientT1V1::skTToStream() {
     ofstream filedat("skT.dat");
     Export(filedat, this->fhesiSecKeyT->GetRepresentation());
     return ifstream("skT.dat");
 }
 
-ifstream KClient::contextToStream() {
+ifstream KClientT1V1::contextToStream() {
     ofstream filedat("context.dat");
     this->client_context->ExportSIContext(filedat);
     return ifstream("context.dat");
 }
 
-ifstream KClient::encryptedDataToStream(const Ciphertext &ciphertext) {
+ifstream KClientT1V1::encryptedDataToStream(const Ciphertext &ciphertext) {
     ofstream ofstream1("temp.dat");
     Export(ofstream1, ciphertext);
     return ifstream("temp.dat");
 }
 
-void KClient::sendEncryptionParamToTServer() {
+void KClientT1V1::sendEncryptionParamToTServer() {
     this->sendMessage("C-PK", this->t_serverSocket);
     string message = this->receiveMessage(this->t_serverSocket, 10);
     if (message != "T-PK-READY") {
@@ -283,7 +285,7 @@ void KClient::sendEncryptionParamToTServer() {
     close(this->t_serverSocket);
 }
 
-void KClient::sendEncryptionParamToUServer() {
+void KClientT1V1::sendEncryptionParamToUServer() {
     this->sendMessage("C-PK", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 10);
     if (message != "U-PK-READY") {
@@ -325,7 +327,7 @@ void KClient::sendEncryptionParamToUServer() {
     this->u_serverSocket=-1;
 }
 
-void KClient::sendEncryptedDataToUServer() {
+void KClientT1V1::sendEncryptedDataToUServer() {
     this->connectToUServer();
     this->sendMessage("C-DA", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 12);
@@ -367,7 +369,7 @@ void KClient::sendEncryptedDataToUServer() {
 
 }
 
-void KClient::receiveResult() {
+void KClientT1V1::receiveResult() {
     print("WAITING FOR KMEANS RESULTS");
     string message=this->receiveMessage(this->u_serverSocket,8);
     if (message != "U-RESULT") {

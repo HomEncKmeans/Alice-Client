@@ -2,8 +2,8 @@
 // Created by george on 8/11/2017.
 //
 
-#include "KClientT1V1.h"
-//#include "KClientV1.h"
+//#include "KClient.h"
+#include "KClientV1.h"
 //#include "KClientV2.h"
 //#include "KClientV3.h"
 
@@ -17,9 +17,9 @@ int main(){
     unsigned p= 2027;//1487;//1487
     unsigned g=7;
     unsigned logQ=55; //4
-    KClientT1V1 client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002);
+    //KClient client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002);
 
-    //KClientV1 client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    KClientV1 client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
     //KClientV2 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
     //KClientV3 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
 

@@ -287,12 +287,15 @@ void KClientV1::sendEncryptionParamToTServer() {
 }
 
 void KClientV1::sendEncryptionParamToUServer() {
+    clock_t c_start = clock();
+    auto t_start = chrono::high_resolution_clock::now();
     this->sendMessage("C-PK", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 10);
     if (message != "U-PK-READY") {
         perror("ERROR IN PROTOCOL 1-STEP 1");
         return;
     }
+    timeCalulator(c_start,t_start);
     this->sendStream(this->pkCToStream(), this->u_serverSocket);
     string message1 = this->receiveMessage(this->u_serverSocket, 13);
     if (message1 != "U-PK-RECEIVED") {
@@ -490,14 +493,15 @@ void KClientV1::sendUnEncryptedDataToTServer() {
                 perror("ERROR IN PROTOCOL 3.1-STEP 8");
                 return;
             }
-
+            clock_t c_start = clock();
+            auto t_start = chrono::high_resolution_clock::now();
             uint32_t coef = iter.second[i];
             htonl(coef);
             if (0 > send(this->t_serverSocket, &coef, sizeof(uint32_t), 0)) {
                 perror("ERROR IN PROTOCOL 3.1-STEP 9.");
                 return;
             }
-
+            timeCalulator(c_start,t_start);
             string message6 = this->receiveMessage(this->t_serverSocket, 15);
             if (message6 != "T-COEF-RECEIVED") {
                 perror("ERROR IN PROTOCOL 3.1-STEP 10");
