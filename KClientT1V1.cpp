@@ -5,7 +5,9 @@
 #include "KClientT1V1.h"
 
 KClientT1V1::KClientT1V1(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
-                 unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort) {
+                 unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort, unsigned k) {
+    this->k=k;
+    this->active=true;
     this->u_serverIP = u_serverIP;
     this->u_serverPort = u_serverPort;
     this->t_serverIP = t_serverIP;
@@ -42,7 +44,22 @@ KClientT1V1::KClientT1V1(unsigned p, unsigned g, unsigned logQ, const string &da
 
     LoadDataPolyX(this->loadeddata, this->labels, this->dim, data, *this->client_context);
     this->sendEncryptedDataToUServer();
-    this->receiveResult();
+    while (this->active) {
+        string message = this->receiveMessage(this->u_serverSocket, 4);
+        if (message == "U-RE") {
+            this->receiveResult();
+            this->active= false;
+        } else if (message == "U-NC") {
+            this->calculateCentroid(this->u_serverSocket);
+        } else {
+            perror("ERROR IN PROTOCOL INITIALIZATION");
+            return;
+        }
+
+
+
+    }
+    //this->receiveResult();
 }
 
 void KClientT1V1::connectToTServer() {
@@ -179,6 +196,38 @@ string KClientT1V1::receiveMessage(const int &socket, int buffersize) {
     message.erase(static_cast<unsigned long>(buffersize));
     this->log(socket, "---> " + message);
     return message;
+}
+
+ifstream KClientT1V1::receiveStream(int socketFD, string filename) {
+    uint32_t size;
+    auto *data = (char *) &size;
+    if (recv(socketFD, data, sizeof(uint32_t), 0) < 0) {
+        perror("RECEIVE SIZE ERROR");
+    }
+
+    ntohl(size);
+    this->log(socketFD, "--> SIZE: " + to_string(size));
+    this->sendMessage("SIZE-OK",socketFD);
+
+    auto *memblock = new char[size];
+    ssize_t expected_data=size;
+    ssize_t received_data=0;
+    while(received_data<expected_data){
+        ssize_t data_fd=recv(socketFD, memblock+received_data, 10000, 0);
+        received_data +=data_fd;
+
+    }
+    print(received_data);
+
+    if (received_data!=expected_data ) {
+        perror("RECEIVE STREAM ERROR");
+        exit(1);
+    }
+
+    ofstream temp(filename, ios::out | ios::binary);
+    temp.write(memblock, size);
+    temp.close();
+    return ifstream(filename);
 }
 
 void KClientT1V1::log(int socket, string message) {
@@ -371,11 +420,7 @@ void KClientT1V1::sendEncryptedDataToUServer() {
 
 void KClientT1V1::receiveResult() {
     print("WAITING FOR KMEANS RESULTS");
-    string message=this->receiveMessage(this->u_serverSocket,8);
-    if (message != "U-RESULT") {
-        perror("ERROR IN PROTOCOL 8-STEP 1");
-        return;
-    }
+
     this->sendMessage("K-READY",this->u_serverSocket);
     for(unsigned i=0;i<this->encrypted_data_hash_table.size();i++){
         string message1=this->receiveMessage(this->u_serverSocket,3);
@@ -415,5 +460,73 @@ void KClientT1V1::receiveResult() {
     for (auto &iter : this->encrypted_data_hash_table) {
         cout << "Point ID: " << iter.first << " Point: " << iter.second <<" Cluster: "<< this->results[iter.first]<< endl;
     }
+}
 
+void KClientT1V1::calculateCentroid(int socketFD) {
+    this->sendMessage("C-NC-READY",socketFD);
+    for(unsigned i=0;i<this->k;i++) {
+        uint32_t index;
+        auto *data = (char *) &index;
+        if (recv(socketFD, data, sizeof(uint32_t), 0) < 0) {
+            perror("RECEIVE INDEX ERROR");
+        }
+        ntohl(index);
+        this->sendMessage("C-RECEIVED-CI",socketFD);
+
+        uint32_t cluster_size;
+        auto *datasize = (char *) &cluster_size;
+        if (recv(socketFD, datasize, sizeof(uint32_t), 0) < 0) {
+            perror("RECEIVE INDEX ERROR");
+        }
+        ntohl(cluster_size);
+        this->sendMessage("C-RECEIVED-CS",socketFD);
+
+        Ciphertext centroidsum(*this->fhesiPubKey);
+        this->receiveStream(socketFD, to_string(index) + "centroidsum.dat");
+        ifstream in(to_string(index) + "centroidsum.dat");
+        Import(in, centroidsum);
+        this->sendMessage("C-RECEIVED-C",socketFD);
+        Plaintext pcentroidsum;
+        this->fhesiSecKey->Decrypt(pcentroidsum,centroidsum);
+        auto newcentroid=this->newCentroid(pcentroidsum, cluster_size);
+        Ciphertext cnewcnetroid(*this->fhesiPubKey);
+        this->fhesiPubKey->Encrypt(cnewcnetroid,newcentroid);
+        this->sendStream(this->centroidsToStream(cnewcnetroid),socketFD);
+        string message = this->receiveMessage(socketFD, 13);
+        if (message != "U-NC-RECEIVED") {
+            perror("ERROR IN PROTOCOL 6-STEP 4");
+            return;
+        }
+    }
+    string message1 = this->receiveMessage(socketFD, 11);
+    if (message1 != "U-C-UPDATED") {
+        perror("ERROR IN PROTOCOL 6-STEP 5");
+        return;
+    }
+
+    this->sendMessage("T-READY",socketFD);
+    print("K-MEANS ROUND FINISH");
+    close(socketFD);
+}
+
+
+Plaintext KClientT1V1::newCentroid(const Plaintext &sum, long mean) {
+    ZZ_pX centroidx = sum.message;
+    ZZ_pX new_centroid;
+    ZZ_p coef;
+    for (long i = 0; i < centroidx.rep.length(); i++) {
+        coef = coeff(centroidx, i);
+        ZZ x = rep(coef);
+        long t = to_long(x) / mean;
+        SetCoeff(new_centroid, i, t);
+    }
+    Plaintext centroid(*this->client_context, new_centroid);
+    return centroid;
+}
+
+
+ifstream KClientT1V1::centroidsToStream(const Ciphertext &centroid) {
+    ofstream ofstream1("centroid.dat");
+    Export(ofstream1, centroid);
+    return ifstream("centroid.dat");
 }

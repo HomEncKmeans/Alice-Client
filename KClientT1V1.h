@@ -26,8 +26,8 @@ private:
     string t_serverIP;
     int t_serverPort;
     int t_serverSocket=-1;
-
-
+    bool active;
+    unsigned k;
     unsigned client_p;
     unsigned client_g;
     unsigned client_logQ;
@@ -50,9 +50,12 @@ private:
     map<uint32_t ,unsigned> results;
     void connectToUServer();
     void connectToTServer();
+    void calculateCentroid(int);
+    Plaintext newCentroid(const Plaintext &,long);
+    ifstream centroidsToStream(const Ciphertext &);
 
 public:
-    KClientT1V1(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned);
+    KClientT1V1(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned, unsigned);
     bool sendMessage(string, int socket);
     bool sendStream(ifstream, int);
     string receiveMessage(const int &,int buffersize=64);
@@ -61,6 +64,7 @@ public:
     void sendEncryptionParamToUServer();
     void sendEncryptedDataToUServer();
     void receiveResult();
+    ifstream receiveStream(int,string filename="temp.dat");
 };
 
 
