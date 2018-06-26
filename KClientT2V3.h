@@ -2,8 +2,8 @@
 // Created by george on 16/11/2017.
 //
 
-#ifndef KClientT1V3_KClientT1V3_H
-#define KClientT1V3_KClientT1V3_H
+#ifndef KClientT2V3_KClientT2V3_H
+#define KClientT2V3_KClientT2V3_H
 
 #include <iostream>
 #include <fstream>
@@ -17,10 +17,9 @@
 
 using namespace std;
 
-class KClientT1V3 {
+class KClientT2V3 {
 
 private:
-    unsigned k;
     string u_serverIP;
     int u_serverPort;
     int u_serverSocket=-1;
@@ -28,7 +27,7 @@ private:
     int t_serverPort;
     int t_serverSocket=-1;
     bool verbose;
-    bool active;
+
     unsigned client_p;
     unsigned client_g;
     unsigned client_logQ;
@@ -50,17 +49,14 @@ private:
     vector<ZZ_p> labels;
     map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
     map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
-    map<uint32_t ,unsigned> results;
+    map<uint32_t ,vector<long>> results;
     map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
     void connectToTServer();
     void createStruct();
-    void calculateCentroid(int);
-    Plaintext newCentroidCoef(const Plaintext &,long);
-    ifstream centroidCoefToStream(const Ciphertext &);
 
 public:
-    KClientT1V3(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,unsigned,bool verbose=true);
+    KClientT2V3(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,bool verbose=true);
     bool sendMessage(string, int socket);
     bool sendStream(ifstream, int);
     string receiveMessage(const int &,int buffersize=64);
@@ -73,4 +69,4 @@ public:
 };
 
 
-#endif //KClientT1V3_KClientT1V3_H
+#endif //
