@@ -21,7 +21,7 @@ int main(){
 
     //KClientT1V3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3, true);
 
-    KClientT2V3 client(p,g,logQ,"../script/sample100x10.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
+    KClientT2V3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3,true);
 
     //KClientV1 client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
     

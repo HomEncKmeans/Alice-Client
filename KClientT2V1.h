@@ -2,8 +2,8 @@
 // Created by george on 16/11/2017.
 //
 
-#ifndef KClientT2V3_KClientT2V3_H
-#define KClientT2V3_KClientT2V3_H
+#ifndef KClientT2V1_KClientT2V1_H
+#define KClientT2V1_KClientT2V1_H
 
 #include <iostream>
 #include <fstream>
@@ -11,13 +11,13 @@
 #include <arpa/inet.h>
 #include "FHE-SI.h"
 #include "Serialization.h"
-#include "clientfhesiutils.h"
+#include "old_techniques/clientfhesiutils.h"
 #include "unistd.h"
 #include <map>
 
 using namespace std;
 
-class KClientT2V3 {
+class KClientT2V1 {
 
 private:
     string u_serverIP;
@@ -62,7 +62,7 @@ private:
 
 
 public:
-    KClientT2V3(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,unsigned ,bool verbose=true);
+    KClientT2V1(unsigned, unsigned, unsigned,const string &,const string&,unsigned ,const string &, unsigned,unsigned ,bool verbose=true);
     bool sendMessage(string, int socket);
     bool sendStream(ifstream, int);
     string receiveMessage(const int &,int buffersize=64);

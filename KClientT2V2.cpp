@@ -2,9 +2,9 @@
 // Created by george on 16/11/2017.
 //
 
-#include "KClientT2V3.h"
+#include "KClientT2V1.h"
 
-KClientT2V3::KClientT2V3(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
+KClientT2V2::KClientT2V2(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
                      unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort,unsigned k, bool verbose) {
     this->k = k;
     this->verbose = verbose;
@@ -58,7 +58,7 @@ KClientT2V3::KClientT2V3(unsigned p, unsigned g, unsigned logQ, const string &da
     }
 }
 
-void KClientT2V3::connectToTServer() {
+void KClientT2V2::connectToTServer() {
     struct sockaddr_in t_server_address;
     if (this->t_serverSocket == -1) {
         this->t_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -80,13 +80,13 @@ void KClientT2V3::connectToTServer() {
         perror("ERROR. CONNECTION FAILED TO TSERVER");
 
     } else {
-        print("KClientT2V3 CONNECTED TO TSERVER");
+        print("KClientT2V2 CONNECTED TO TSERVER");
 
     }
 
 }
 
-void KClientT2V3::connectToUServer() {
+void KClientT2V2::connectToUServer() {
     struct sockaddr_in u_server_address;
     if (this->u_serverSocket == -1) {
         this->u_serverSocket = socket(AF_INET, SOCK_STREAM, 0);
@@ -108,13 +108,13 @@ void KClientT2V3::connectToUServer() {
         perror("ERROR. CONNECTION FAILED TO USERVER");
 
     } else {
-        print("KClientT2V3 CONNECTED TO USERVER");
+        print("KClientT2V2 CONNECTED TO USERVER");
 
     }
 
 }
 
-bool KClientT2V3::sendMessage(string message, int socket) {
+bool KClientT2V2::sendMessage(string message, int socket) {
     if (send(socket, message.c_str(), strlen(message.c_str()), 0) < 0) {
         perror("SEND FAILED.");
         return false;
@@ -124,7 +124,7 @@ bool KClientT2V3::sendMessage(string message, int socket) {
     }
 }
 
-bool KClientT2V3::sendStream(ifstream data, int socket) {
+bool KClientT2V2::sendStream(ifstream data, int socket) {
     uint32_t CHUNK_SIZE = 10000;
     streampos begin, end;
     begin = data.tellg();
@@ -181,7 +181,7 @@ bool KClientT2V3::sendStream(ifstream data, int socket) {
     }
 }
 
-string KClientT2V3::receiveMessage(const int &socket, int buffersize) {
+string KClientT2V2::receiveMessage(const int &socket, int buffersize) {
     char buffer[buffersize];
     string message;
     if (recv(socket, buffer, static_cast<size_t>(buffersize), 0) < 0) {
@@ -193,7 +193,7 @@ string KClientT2V3::receiveMessage(const int &socket, int buffersize) {
     return message;
 }
 
-ifstream KClientT2V3::receiveStream(int socketFD, string filename) {
+ifstream KClientT2V2::receiveStream(int socketFD, string filename) {
     uint32_t size;
     auto *data = (char *) &size;
     if (recv(socketFD, data, sizeof(uint32_t), 0) < 0) {
@@ -225,7 +225,7 @@ ifstream KClientT2V3::receiveStream(int socketFD, string filename) {
     return ifstream(filename);
 }
 
-void KClientT2V3::log(int socket, string message) {
+void KClientT2V2::log(int socket, string message) {
     if (this->verbose) {
         sockaddr address;
         socklen_t addressLength;
@@ -242,43 +242,43 @@ void KClientT2V3::log(int socket, string message) {
 }
 
 
-ifstream KClientT2V3::pkCToStream() {
+ifstream KClientT2V2::pkCToStream() {
     ofstream filedat("pk.dat");
     Export(filedat, this->fhesiPubKey->GetRepresentation());
     return ifstream("pk.dat", ios::binary);
 }
 
-ifstream KClientT2V3::ksCToStream() {
+ifstream KClientT2V2::ksCToStream() {
     ofstream filedat("ksC.dat");
     Export(filedat, this->keySwitchSI->GetRepresentation());
     return ifstream("ksC.dat");
 }
 
-ifstream KClientT2V3::ksTToStream() {
+ifstream KClientT2V2::ksTToStream() {
     ofstream filedat("ksT.dat");
     Export(filedat, this->keySwitchSIT->GetRepresentation());
     return ifstream("ksT.dat");
 }
 
-ifstream KClientT2V3::skTToStream() {
+ifstream KClientT2V2::skTToStream() {
     ofstream filedat("skT.dat");
     Export(filedat, this->fhesiSecKeyT->GetRepresentation());
     return ifstream("skT.dat");
 }
 
-ifstream KClientT2V3::contextToStream() {
+ifstream KClientT2V2::contextToStream() {
     ofstream filedat("context.dat");
     this->client_context->ExportSIContext(filedat);
     return ifstream("context.dat");
 }
 
-ifstream KClientT2V3::encryptedDataToStream(const Ciphertext &ciphertext) {
+ifstream KClientT2V2::encryptedDataToStream(const Ciphertext &ciphertext) {
     ofstream ofstream1("temp.dat");
     Export(ofstream1, ciphertext);
     return ifstream("temp.dat");
 }
 
-void KClientT2V3::sendEncryptionParamToTServer() {
+void KClientT2V2::sendEncryptionParamToTServer() {
     this->sendMessage("C-PK", this->t_serverSocket);
     string message = this->receiveMessage(this->t_serverSocket, 10);
     if (message != "T-PK-READY") {
@@ -331,7 +331,7 @@ void KClientT2V3::sendEncryptionParamToTServer() {
     close(this->t_serverSocket);
 }
 
-void KClientT2V3::sendEncryptionParamToUServer() {
+void KClientT2V2::sendEncryptionParamToUServer() {
     this->sendMessage("C-PK", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 10);
     if (message != "U-PK-READY") {
@@ -373,7 +373,7 @@ void KClientT2V3::sendEncryptionParamToUServer() {
     this->u_serverSocket = -1;
 }
 
-void KClientT2V3::sendEncryptedDataToUServer() {
+void KClientT2V2::sendEncryptedDataToUServer() {
     this->connectToUServer();
     this->sendMessage("C-DA", this->u_serverSocket);
     string message = this->receiveMessage(this->u_serverSocket, 12);
@@ -457,7 +457,7 @@ void KClientT2V3::sendEncryptedDataToUServer() {
     print("PROTOCOL 3 COMPLETED");
 }
 
-void KClientT2V3::receiveResult() {
+void KClientT2V2::receiveResult() {
     print("WAITING FOR KMEANS RESULTS");
 
     this->sendMessage("C-READY", this->u_serverSocket);
@@ -530,7 +530,7 @@ void KClientT2V3::receiveResult() {
     }
 }
 
-void KClientT2V3::createStruct() {
+void KClientT2V2::createStruct() {
     srand(static_cast<unsigned int>(time(NULL)));
     for (unsigned i = 0; i < this->loadeddata.size(); i++) {
         vector<ZZ_pX> point = loadeddata[i];
@@ -544,7 +544,7 @@ void KClientT2V3::createStruct() {
 }
 
 
-void KClientT2V3::calculateCentroid(int socketFD) {
+void KClientT2V2::calculateCentroid(int socketFD) {
     this->sendMessage( "C-NC-READY",socketFD);
     for (unsigned i = 0; i < this->k; i++) {
 
@@ -613,7 +613,7 @@ void KClientT2V3::calculateCentroid(int socketFD) {
 }
 
 
-Plaintext KClientT2V3::newCentroidCoef(const Plaintext &sum, long mean) {
+Plaintext KClientT2V2::newCentroidCoef(const Plaintext &sum, long mean) {
     ZZ_pX centroidx = sum.message;
     ZZ_pX new_centroid_coef;
     ZZ_p coef;
@@ -630,14 +630,14 @@ Plaintext KClientT2V3::newCentroidCoef(const Plaintext &sum, long mean) {
     return centroid_coef;
 }
 
-ifstream KClientT2V3::centroidCoefToStream(const Ciphertext &centroid) {
+ifstream KClientT2V2::centroidCoefToStream(const Ciphertext &centroid) {
     ofstream ofstream1("centroidcoef.dat");
     Export(ofstream1, centroid);
     return ifstream("centroidcoef.dat");
 }
 
 
-long KClientT2V3::extractClusterSize(const Plaintext &clustersize){
+long KClientT2V2::extractClusterSize(const Plaintext &clustersize){
     ZZ_pX clustersize_1 = clustersize.message;
     ZZ_p coef;
     coef = coeff(clustersize_1, 0);
