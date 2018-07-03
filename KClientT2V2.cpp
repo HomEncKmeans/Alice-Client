@@ -2,7 +2,7 @@
 // Created by george on 16/11/2017.
 //
 
-#include "KClientT2V1.h"
+#include "KClientT2V2.h"
 
 KClientT2V2::KClientT2V2(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
                      unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort,unsigned k, bool verbose) {
