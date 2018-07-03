@@ -46,17 +46,17 @@ private:
     ifstream contextToStream();
     ifstream encryptedDataToStream(const Ciphertext &);
     vector<vector<uint32_t>> loadedataToInt;
-    vector<vector<ZZ_pX>> loadeddata;
+    vector<ZZ_pX> loadeddata;
     vector<ZZ_p> labels;
-    map<uint32_t ,vector<ZZ_pX> > encrypted_data_hash_table;
-    map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
+    map<uint32_t ,ZZ_pX> encrypted_data_hash_table;
+    //map<uint32_t ,vector<uint32_t>> unencrypted_data_hash_table;
     map<uint32_t ,vector<long>> results;
     map<uint32_t ,uint32_t > identifiers;
     void connectToUServer();
     void connectToTServer();
     void createStruct();
     void calculateCentroid(int);
-    Plaintext newCentroidCoef(const Plaintext &,long);
+    Plaintext newCentroid(const Plaintext &,long);
     ifstream centroidCoefToStream(const Ciphertext &);
     long extractClusterSize(const Plaintext &);
 
