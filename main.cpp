@@ -3,9 +3,9 @@
 //
 
 //#include "KClientT1V1.h"
-//#include "KClientV1.h"
+#include "KClientT1V2.h"
 //#include "KClientT1V3.h"
-#include "KClientT2V3.h"
+//#include "KClientT2V3.h"
 
 #include <ctime>
 #include <chrono>
@@ -18,13 +18,13 @@ int main(){
     unsigned g=7;
     unsigned logQ=55; //4
     //KClientT1V1 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3);
+    KClientT1V2 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3, true);
 
     //KClientT1V3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3, true);
 
-    KClientT2V3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3,true);
+    //KClientT2V3 client(p,g,logQ,"../sample.dat","127.0.0.1",5001,"127.0.0.1",5002,3,true);
 
-    //KClientV1 client(p,g,logQ,"../script/sample20x2.dat","127.0.0.1",5001,"127.0.0.1",5002,true);
-    
+
     std::clock_t c_end = std::clock();
     auto t_end = std::chrono::high_resolution_clock::now();
 
