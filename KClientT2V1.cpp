@@ -7,6 +7,7 @@
 KClientT2V1::KClientT2V1(unsigned p, unsigned g, unsigned logQ, const string &data, const string &u_serverIP,
                      unsigned u_serverPort, const string &t_serverIP, unsigned t_serverPort,unsigned k, bool verbose) {
     this->k = k;
+    this->active=true;
     this->verbose = verbose;
     this->u_serverIP = u_serverIP;
     this->u_serverPort = u_serverPort;
@@ -538,6 +539,9 @@ void KClientT2V1::calculateCentroid(int socketFD) {
         this->fhesiSecKey->Decrypt(cluster_size_decrypted,cluster_size_encrypted);
         long cluster_size = this->extractClusterSize(cluster_size_decrypted);
         print("The cluster size is: "+to_string(cluster_size));
+        if(cluster_size==0){
+            cluster_size=1;
+        }
         this->sendMessage("C-RECEIVED-CS",socketFD);
         Ciphertext centroid_sum(*this->fhesiPubKey);
         this->receiveStream(socketFD, to_string(cluster_index) + "centroidsum.dat");
